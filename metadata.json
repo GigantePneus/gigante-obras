@@ -1,0 +1,8 @@
+
+{
+  "name": "Gigante Pneus - Controle de Implantação",
+  "description": "Sistema de controle de gastos para equipes de montagem e implementação de novas unidades Gigante Pneus.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
