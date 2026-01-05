@@ -33,6 +33,8 @@ const App: React.FC = () => {
   const [newCatName, setNewCatName] = useState('');
   const [newProjectName, setNewProjectName] = useState('');
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   // Carregar dados iniciais do Supabase
   useEffect(() => {
     fetchData();
@@ -218,6 +220,50 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden min-h-screen">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
+          <aside className="absolute top-0 bottom-0 left-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-8 flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="mb-8 flex items-center justify-between">
+              <div className="bg-brand-green w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xl">G</div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-red-500">✕</button>
+            </div>
+
+            <nav className="space-y-3 flex-grow">
+              <button
+                onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+                className={`w-full flex items-center space-x-4 px-5 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'dashboard' ? 'bg-brand-green text-white shadow-xl shadow-green-100 dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              >
+                <span>Resumo Geral</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }}
+                className={`w-full flex items-center space-x-4 px-5 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'history' ? 'bg-brand-green text-white shadow-xl shadow-green-100 dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              >
+                <span>Histórico Obras</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
+                className={`w-full flex items-center space-x-4 px-5 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'settings' ? 'bg-brand-green text-white shadow-xl shadow-green-100 dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              >
+                <span>Configurações</span>
+              </button>
+            </nav>
+
+            <div className="mt-8">
+              <button
+                onClick={() => { handleGetInsight(); setIsMobileMenuOpen(false); }}
+                className="w-full bg-brand-blue text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest"
+              >
+                IA Gigante
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Sidebar - Desktop Only */}
       <aside className="hidden lg:flex flex-col w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-8">
         <div className="mb-12 flex flex-col items-center">
@@ -279,11 +325,12 @@ const App: React.FC = () => {
         {/* Mobile Header */}
         <div className="lg:hidden p-6 flex justify-between items-center bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <div className="bg-brand-green w-2 h-8 rounded-full"></div>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 text-slate-800 dark:text-white">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
             <h1 className="font-black text-lg tracking-tight">GIGANTE OBRAS</h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={toggleTheme} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">{theme === 'light' ? '🌙' : '☀️'}</button>
             <button
               onClick={() => {
                 if (activeTab === 'settings') setActiveTab('dashboard');
@@ -295,6 +342,7 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
+
 
         <div className="p-6 lg:p-12">
           {activeTab === 'dashboard' && (
