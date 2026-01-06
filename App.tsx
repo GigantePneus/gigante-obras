@@ -8,7 +8,7 @@ import { getFinancialInsights } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line
+  PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
 
 const App: React.FC = () => {
@@ -114,16 +114,29 @@ const App: React.FC = () => {
   const stats = useMemo(() => {
     const total = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
     const count = filteredExpenses.length;
-    const avg = count > 0 ? total / count : 0;
 
+    // Calcular variação diária (gastos de hoje vs ontem)
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const todayExpenses = filteredExpenses.filter(e => e.date === today);
+    const yesterdayExpenses = filteredExpenses.filter(e => e.date === yesterday);
+    const todayTotal = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const yesterdayTotal = yesterdayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const dailyVariation = yesterdayTotal > 0 ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 : 0;
+
+    // Calcular maior gasto por categoria com valor e percentual
     const catTotals: Record<string, number> = {};
     filteredExpenses.forEach(e => {
       catTotals[e.categoryId] = (catTotals[e.categoryId] || 0) + e.amount;
     });
-    const topCatId = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0]?.[0];
-    const topCat = topCatId ? getCategory(topCatId).name : 'Nenhuma';
+    const topCatEntry = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+    const topCat = topCatEntry ? {
+      name: getCategory(topCatEntry[0]).name,
+      value: topCatEntry[1],
+      percentage: total > 0 ? (topCatEntry[1] / total) * 100 : 0
+    } : { name: 'Nenhuma', value: 0, percentage: 0 };
 
-    return { total, avg, topCat, count };
+    return { total, dailyVariation, topCat, count };
   }, [filteredExpenses, categories]);
 
   const chartData = useMemo(() => {
@@ -356,8 +369,16 @@ const App: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Investido" value={`R$ ${stats.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} icon={<div className="font-black text-xl">R$</div>} />
-                <StatCard title="Custo Médio p/ Gasto" value={`R$ ${stats.avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} icon={<div className="font-black text-xl">📊</div>} />
-                <StatCard title="Gargalo de Custo" value={String(stats.topCat)} icon={<div className="font-black text-xl">⚠️</div>} />
+                <StatCard
+                  title="Variação Diária"
+                  value={stats.dailyVariation === 0 ? 'Sem dados' : `${stats.dailyVariation > 0 ? '+' : ''}${stats.dailyVariation.toFixed(1)}%`}
+                  icon={<div className="font-black text-xl">{stats.dailyVariation > 0 ? '📈' : stats.dailyVariation < 0 ? '📉' : '➖'}</div>}
+                />
+                <StatCard
+                  title="Maiores Gastos"
+                  value={`${stats.topCat.name} (${stats.topCat.percentage.toFixed(1)}%)`}
+                  icon={<div className="font-black text-xl">💰</div>}
+                />
                 <StatCard title="Lançamentos" value={String(stats.count)} icon={<div className="font-black text-xl">📄</div>} />
               </div>
 
@@ -370,7 +391,21 @@ const App: React.FC = () => {
                         <Pie data={chartData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value">
                           {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                         </Pie>
-                        <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: '1rem',
+                            border: 'none',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            fontWeight: 'bold'
+                          }}
+                          formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                        />
+                        <Legend
+                          verticalAlign="bottom"
+                          height={36}
+                          iconType="circle"
+                          wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
